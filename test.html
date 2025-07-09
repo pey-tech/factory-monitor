@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Realtime Firebase Monitoring</title>
+  <title>Realtime Factory Monitoring</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <style>
@@ -55,13 +55,16 @@
 </head>
 <body>
   <div class="container">
-    <h2>Realtime Firebase Monitoring</h2>
+    <h2>Realtime Factory Monitoring</h2>
 
     <label for="category">Pilih Kategori:</label>
     <select id="category">
       <option value="read_plc_data_">PLC</option>
       <option value="read_temperature_terminal_">Temperature</option>
-      <!-- Tambahkan kategori lain jika ada -->
+      <option value="read_input_register_">Chiller</option>
+      <option value="read_input_register_ampere_">Ampere water pump</option>
+      <option value="read_oil_level_">Oil level</option>
+      <option value="read_water_pressure_">Water pressure</option>
     </select>
 
     <table id="data-table">
@@ -77,6 +80,55 @@
   </div>
 
   <script>
+    const nameMap = {
+      "read_plc_data_1": "PLC T3",
+      "read_plc_data_3": "PLC T4",
+      "read_plc_data_5": "PLC T2",
+      "read_plc_data_7": "PLC T1",
+      "read_plc_data_9": "PLC SND",
+      "read_temperature_terminal_1": "Gardu Barat",
+      "read_temperature_terminal_3": "Gardu Tengah",
+      "read_temperature_terminal_5": "Gardu Timur",
+      "read_input_register_1" : "Chiller T3_1",
+      "read_input_register_2" : "Chiller T3_2",
+      "read_input_register_3" : "Chiller T4_1",
+      "read_input_register_4" : "Chiller T4_2",
+      "read_input_register_5" : "Chiller T2_1",
+      "read_input_register_6" : "Chiller T2_2",
+      "read_input_register_7" : "Chiller T1_1",
+      "read_input_register_8" : "Chiller T1_2",
+      "read_input_register_9" : "Chiller SND",
+      "read_input_register_10" : "Chiller SND",
+      "read_input_register_11" : "Chiller YZM Timur",
+      "read_input_register_12" : "Chiller HS450",
+      "read_input_register_ampere_1" : "Ampere WP T3_1",
+      "read_input_register_ampere_2" : "Ampere WP T3_2",
+      "read_input_register_ampere_3" : "Ampere WP T4_1",
+      "read_input_register_ampere_4" : "Ampere WP T4_2",
+      "read_input_register_ampere_5" : "Ampere WP T1_1",
+      "read_input_register_ampere_6" : "Ampere WP T1_2",
+      "read_input_register_ampere_7" : "Ampere WP T2_1",
+      "read_input_register_ampere_8" : "Ampere WP T2_2",
+      "read_input_register_ampere_9" : "Ampere WP SND_1",
+      "read_input_register_ampere_10" : "Ampere WP SND_2",
+      "read_oil_level_1" : "Oil Level T3",
+      "read_oil_level_3" : "Oil Level T4",
+      "read_oil_level_5" : "Oil Level T2",
+      "read_oil_level_7" : "Oil Level T1",
+      "read_oil_level_9" : "Oil Level SND",
+      "read_oil_level_11" : "Oil Level YZM Barat",
+      "read_oil_level_13" : "Oil Level YZM Timur",
+      "read_oil_level_15" : "Oil Level HS450",
+      "read_oil_level_17" : "Oil Level MA1200",
+      "read_water_pressure_1" : "Water Pressure T3_1",
+      "read_water_pressure_2" : "Water Pressure T3_2",
+      "read_water_pressure_3" : "Water Pressure T4_1",
+      "read_water_pressure_4" : "Water Pressure T4_2",
+      "read_water_pressure_5" : "Water Pressure T2_1",
+      "read_water_pressure_6" : "Water Pressure T2_2",
+      "read_water_pressure_7" : "Water Pressure T1_1",
+      "read_water_pressure_8" : "Water Pressure T1_2", 
+    };
     // Konfigurasi Firebase
     const firebaseConfig = {
       databaseURL: "https://factory-monitoring-176a8-default-rtdb.firebaseio.com/"
@@ -107,7 +159,7 @@
       tbody.innerHTML = "";
 
       const filtered = Object.keys(lastSnapshot)
-        .filter(k => k.startsWith(currentPrefix))
+        .filter(k => new RegExp(`^${currentPrefix}\\d+$`).test(k))
         .sort();
 
       if (filtered.length === 0) {
@@ -118,8 +170,10 @@
       filtered.forEach(key => {
         const row = document.createElement("tr");
 
+	const aliasName = nameMap[key] || key;
+
         const cellKey = document.createElement("td");
-        cellKey.textContent = key;
+        cellKey.textContent = aliasName;
 
         const cellVal = document.createElement("td");
         cellVal.classList.add("json");
