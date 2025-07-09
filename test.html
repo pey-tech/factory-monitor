@@ -168,20 +168,27 @@
       }
 
       filtered.forEach(key => {
-        const row = document.createElement("tr");
+  	const val = lastSnapshot[key];
 
-	const aliasName = nameMap[key] || key;
+  	// 🔍 Skip jika hanya ada 1 key dan itu "timestamp"
+  	const keys = Object.keys(val || {});
+  	if (keys.length === 1 && keys[0] === "timestamp") return;
 
-        const cellKey = document.createElement("td");
-        cellKey.textContent = aliasName;
+  	// 🏷️ Alias name atau default
+  	const aliasName = nameMap[key] || key;
 
-        const cellVal = document.createElement("td");
-        cellVal.classList.add("json");
-        cellVal.textContent = JSON.stringify(lastSnapshot[key], null, 2);
+  	const row = document.createElement("tr");
 
-        row.appendChild(cellKey);
-        row.appendChild(cellVal);
-        tbody.appendChild(row);
+	const cellKey = document.createElement("td");
+  	cellKey.textContent = aliasName;
+
+  	const cellVal = document.createElement("td");
+  	cellVal.classList.add("json");
+  	cellVal.textContent = JSON.stringify(val, null, 2);
+
+  	row.appendChild(cellKey);
+  	row.appendChild(cellVal);
+  	tbody.appendChild(row);
       });
 
       document.getElementById("last-updated").textContent =
