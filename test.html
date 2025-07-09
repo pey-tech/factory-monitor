@@ -2,18 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Realtime Monitoring</title>
+  <title>Realtime Firebase Monitoring</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; background: #f8f9fa; }
-    .container { max-width: 960px; margin: auto; background: white; padding: 2rem; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
-    select { padding: 0.5rem; margin-bottom: 1rem; font-size: 1rem; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { border: 1px solid #ccc; padding: 0.75rem; text-align: left; }
-    th { background-color: #f1f1f1; }
-    tr:nth-child(even) { background-color: #fafafa; }
-    .json { font-family: monospace; white-space: pre-wrap; word-break: break-word; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 960px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    select {
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background: #f0f0f0;
+    }
+    tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+    .json {
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    #last-updated {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #666;
+    }
   </style>
 </head>
 <body>
@@ -21,61 +58,84 @@
     <h2>Realtime Firebase Monitoring</h2>
 
     <label for="category">Pilih Kategori:</label>
-    <select id="category" onchange="loadCategoryData()">
+    <select id="category">
       <option value="read_plc_data_">PLC</option>
       <option value="read_temperature_terminal_">Temperature</option>
+      <!-- Tambahkan kategori lain jika ada -->
     </select>
 
     <table id="data-table">
-      <thead><tr><th>Path</th><th>Data</th></tr></thead>
-      <tbody><tr><td colspan="2">Memuat data...</td></tr></tbody>
+      <thead>
+        <tr><th>Path</th><th>Data</th></tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="2">Memuat data...</td></tr>
+      </tbody>
     </table>
+
+    <div id="last-updated">Menunggu pembaruan...</div>
   </div>
 
   <script>
-    var firebaseConfig = {
+    // Konfigurasi Firebase
+    const firebaseConfig = {
       databaseURL: "https://factory-monitoring-176a8-default-rtdb.firebaseio.com/"
     };
     firebase.initializeApp(firebaseConfig);
 
-    let allDataRef = firebase.database().ref();
+    const db = firebase.database();
+    const rootRef = db.ref();
 
-    function loadCategoryData() {
-      const prefix = document.getElementById("category").value;
-      const tableBody = document.querySelector("#data-table tbody");
-      tableBody.innerHTML = "<tr><td colspan='2'>Memuat data...</td></tr>";
+    let currentPrefix = document.getElementById("category").value;
+    let lastSnapshot = {};
 
-      allDataRef.once("value", function(snapshot) {
-        const data = snapshot.val();
-        tableBody.innerHTML = "";
+    // Listener perubahan data global
+    rootRef.on("value", function(snapshot) {
+      lastSnapshot = snapshot.val() || {};
+      renderData();
+    });
 
-        const filtered = Object.keys(data)
-          .filter(key => key.startsWith(prefix))
-          .sort();
+    // Ganti kategori
+    document.getElementById("category").addEventListener("change", () => {
+      currentPrefix = document.getElementById("category").value;
+      renderData();
+    });
 
-        if (filtered.length === 0) {
-          tableBody.innerHTML = "<tr><td colspan='2'>Tidak ada data ditemukan</td></tr>";
-          return;
-        }
+    // Fungsi render data
+    function renderData() {
+      const tbody = document.querySelector("#data-table tbody");
+      tbody.innerHTML = "";
 
-        filtered.forEach(key => {
-          const row = document.createElement("tr");
+      const filtered = Object.keys(lastSnapshot)
+        .filter(k => k.startsWith(currentPrefix))
+        .sort();
 
-          const keyCell = document.createElement("td");
-          keyCell.textContent = key;
+      if (filtered.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='2'>Tidak ada data ditemukan</td></tr>";
+        return;
+      }
 
-          const valueCell = document.createElement("td");
-          valueCell.innerHTML = `<div class="json">${JSON.stringify(data[key], null, 2)}</div>`;
+      filtered.forEach(key => {
+        const row = document.createElement("tr");
 
-          row.appendChild(keyCell);
-          row.appendChild(valueCell);
-          tableBody.appendChild(row);
-        });
+        const cellKey = document.createElement("td");
+        cellKey.textContent = key;
+
+        const cellVal = document.createElement("td");
+        cellVal.classList.add("json");
+        cellVal.textContent = JSON.stringify(lastSnapshot[key], null, 2);
+
+        row.appendChild(cellKey);
+        row.appendChild(cellVal);
+        tbody.appendChild(row);
       });
+
+      document.getElementById("last-updated").textContent =
+        "Terakhir diperbarui: " + new Date().toLocaleString();
     }
 
-    // Load awal
-    loadCategoryData();
+    // Load pertama kali
+    renderData();
   </script>
 </body>
 </html>
